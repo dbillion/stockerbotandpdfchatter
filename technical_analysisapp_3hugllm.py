@@ -26,6 +26,17 @@ from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
 from langchain_experimental.agents.agent_toolkits import create_pandas_dataframe_agent
 from langchain.llms import OpenAI
+from transformers import pipeline
+
+# Load Mistral model
+@st.cache
+def load_model():
+    pipe = pipeline("text-generation", model="mistralai/Mistral-7B-Instruct-v0.2")
+    return pipe
+
+# Initialize the Mistral model
+llm = load_model()
+
 
 
 ## set offline mode for cufflinks
@@ -171,8 +182,8 @@ st.plotly_chart(fig)
 
 st.title("fin-💵💸bot 🤖ADVISOR")
 
-# Load OpenAI API key from Streamlit secrets
-llm = OpenAI(api_key=st.secrets["OPENAI_API_KEY"], temperature=0)
+# # Load OpenAI API key from Streamlit secrets
+# llm = OpenAI(api_key=st.secrets["OPENAI_API_KEY"], temperature=0)
 
 # Set up Streamlit app
 st.title("CSV Interpreter Chatbot")
@@ -195,13 +206,14 @@ if uploaded_file is not None:
         embeddings = OpenAIEmbeddings()
         db = Chroma.from_documents(texts, embeddings)
         retriever = db.as_retriever(search_type="similarity", search_kwargs={"k":2})
-        qa = ConversationalRetrievalChain.from_llm(OpenAI(), retriever)
+        # qa = ConversationalRetrievalChain.from_llm(OpenAI(), retriever)
+        qa = ConversationalRetrievalChain.from_llm(llm, retriever)
 
     elif uploaded_file.type == "text/csv":
         # CSV processing logic
         data_frame = pd.read_csv(uploaded_file)
         st.write(data_frame.head())
-        p_agent = create_pandas_dataframe_agent(llm=llm, df=data_frame, verbose=True)
+        p_agent = create_pandas_dataframe_agent(llm=llm, df=data_frame, agent_type="huggingface-transformers", verbose=True)
 
     # Integrated Chat Interface
     if "messages" not in st.session_state:
