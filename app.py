@@ -8,6 +8,7 @@ from plotly.offline import iplot
 from ydata_profiling import ProfileReport
 
 from openai import OpenAI
+import os
 import streamlit as st
 
 
@@ -172,6 +173,7 @@ st.plotly_chart(fig)
 st.title("fin-💵💸bot 🤖ADVISOR")
 
 # Load OpenAI API key from Streamlit secrets
+api_key = os.getenv("OPENAI_API_KEY")
 llm = OpenAI(api_key=st.secrets["OPENAI_API_KEY"], temperature=0)
 
 # Set up Streamlit app
