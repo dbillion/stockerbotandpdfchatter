@@ -206,7 +206,6 @@ if uploaded_file is not None:
         embeddings = OpenAIEmbeddings()
         db = Chroma.from_documents(texts, embeddings)
         retriever = db.as_retriever(search_type="similarity", search_kwargs={"k":2})
-        # qa = ConversationalRetrievalChain.from_llm(OpenAI(), retriever)
         qa = ConversationalRetrievalChain.from_llm(llm, retriever)
 
     elif uploaded_file.type == "text/csv":
