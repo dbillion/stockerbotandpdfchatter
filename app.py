@@ -5,10 +5,9 @@ import datetime
 import pandas as pd
 import cufflinks as cf
 from plotly.offline import iplot
-from ydata_profiling import ProfileReport
-
+# from ydata_profiling import ProfileReport
+from PIL import Image
 from openai import OpenAI
-import os
 import streamlit as st
 
 
@@ -27,7 +26,51 @@ from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
 from langchain_experimental.agents.agent_toolkits import create_pandas_dataframe_agent
 from langchain.llms import OpenAI
+# from transformers import pipeline
+# from dotenv import load_dotenv
+# pandasai
 
+
+
+load_dotenv()
+# # Load Mistral model
+# @st.cache
+# def load_model():
+#     pipe = pipeline("text-generation", model="mistralai/Mistral-7B-Instruct-v0.2")
+#     return pipe
+
+# # Initialize the Mistral model
+# llm = load_model()
+
+# from pandasai import SmartDataframe
+# from pandasai.callbacks import BaseCallback
+# from pandasai.llm import OpenAI
+# from pandasai.responses.response_parser import ResponseParser
+# class StreamlitCallback(BaseCallback):
+#     def __init__(self, container) -> None:
+#         """Initialize callback handler."""
+#         self.container = container
+
+#     def on_code(self, response: str):
+#         self.container.code(response)
+
+
+# class StreamlitResponse(ResponseParser):
+#     def __init__(self, context) -> None:
+#         super().__init__(context)
+
+#     def format_dataframe(self, result):
+#         st.dataframe(result["value"])
+#         return
+
+#     def format_plot(self, result):
+#         img = Image.open(result["value"])
+#         st.image(img)
+#         return
+
+#     def format_other(self, result):
+#         st.write(result["value"])
+#         return
 
 ## set offline mode for cufflinks
 cf.go_offline()
@@ -172,14 +215,24 @@ st.plotly_chart(fig)
 
 st.title("fin-💵💸bot 🤖ADVISOR")
 
-# Load OpenAI API key from Streamlit secrets
-api_key = os.getenv("OPENAI_API_KEY")
-llm = OpenAI(api_key=st.secrets["OPENAI_API_KEY"], temperature=0)
+# # Load OpenAI API key from Streamlit secrets
 
+# Add a sidebar input for the API key
+api_key = st.sidebar.text_input("Enter your OpenAI API Key", type="password")
+
+if api_key:
+    llm = OpenAI(api_key=api_key, temperature=0)
+    st.sidebar.success("API Key loaded successfully!")
+else:
+    st.sidebar.error("Please enter your API Key to proceed.")
+    
+# llm = OpenAI(api_key=st.secrets["OPENAI_API_KEY"], temperature=0)
+llm = OpenAI(api_key=api_key, temperature=0)
+    
 # Set up Streamlit app
 st.title("CSV Interpreter Chatbot")
 # # Setup Streamlit and Import Libraries
-# st.title("Unified File Uploader and Chat Interface")
+st.title("Unified File Uploader and Chat Interface")
 
 # File Uploader
 uploaded_file = st.file_uploader("Upload your file (CSV or PDF)", type=['csv', 'pdf'])
@@ -197,13 +250,13 @@ if uploaded_file is not None:
         embeddings = OpenAIEmbeddings()
         db = Chroma.from_documents(texts, embeddings)
         retriever = db.as_retriever(search_type="similarity", search_kwargs={"k":2})
-        qa = ConversationalRetrievalChain.from_llm(OpenAI(), retriever)
+        qa = ConversationalRetrievalChain.from_llm(llm, retriever)
 
     elif uploaded_file.type == "text/csv":
         # CSV processing logic
         data_frame = pd.read_csv(uploaded_file)
-        st.write(data_frame.head())
-        p_agent = create_pandas_dataframe_agent(llm=llm, df=data_frame, verbose=True)
+        st.write_stream(data_frame.head())
+        p_agent = create_pandas_dataframe_agent(llm=llm, df=data_frame, agent_type="huggingface-transformers", verbose=True)
 
     # Integrated Chat Interface
     if "messages" not in st.session_state:
@@ -213,7 +266,7 @@ if uploaded_file is not None:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-    if prompt := st.chat_input("What is up?"):
+    if prompt := st.chat_input("What information about your file would you like to find out 😎🕶️?"):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
