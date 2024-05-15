@@ -27,7 +27,7 @@ from langchain.vectorstores import Chroma
 from langchain_experimental.agents.agent_toolkits import create_pandas_dataframe_agent
 from langchain.llms import OpenAI
 # from transformers import pipeline
-# from dotenv import load_dotenv
+from dotenv import load_dotenv
 # pandasai
 
 
